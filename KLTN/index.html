@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhận dạng biển báo giao thông</title>
+</head>
+<body>
+    <h2>Nhận dạng biển báo giao thông</h2>
+    
+    <!-- Input ảnh -->
+    <input type="file" id="imageInput" accept="image/*" onchange="previewImage()">
+    <br><br>
+    
+    <!-- Hiển thị ảnh đã chọn -->
+    <img id="preview" src="#" alt="Ảnh đã chọn" style="max-width: 200px; display: none;">
+    <br><br>
+    
+    <button onclick="uploadImage()">Tải lên & Dự đoán</button>
+    <p id="result"></p>
+
+    <script>
+        function previewImage() {
+            const file = document.getElementById("imageInput").files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById("preview").src = e.target.result;
+                    document.getElementById("preview").style.display = "block";
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function uploadImage() {
+            const fileInput = document.getElementById("imageInput");
+            const resultText = document.getElementById("result");
+
+            if (!fileInput.files.length) {
+                alert("Vui lòng chọn một ảnh!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                resultText.innerText = "⏳ Đang dự đoán...";
+                const response = await fetch("http://127.0.0.1:8000/predict", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error("Lỗi từ server!");
+                }
+
+                const data = await response.json();
+                resultText.innerHTML = `✅ <b>Kết quả:</b> ${data.label} <br> 🎯 <b>Độ tin cậy:</b> ${(data.confidence * 100).toFixed(2)}%`;
+            } catch (error) {
+                resultText.innerHTML = "❌ Lỗi khi dự đoán! Kiểm tra lại server.";
+            }
+        }
+    </script>
+</body>
+</html>
